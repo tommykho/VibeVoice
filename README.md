@@ -213,6 +213,22 @@ python demo/realtime_model_inference_from_file.py --cpu --num_threads 4 \
 
 The model needs roughly 2 GB of weights plus activations at float32, so 8 GB of RAM is comfortable. Expect generation to be slower than real time on laptop-class CPUs; the run prints RTF so you can measure your own. Lowering the DDPM step count is the main speed dial.
 
+## `vibevoice.py` — one CLI for both TTS stacks
+
+`vibevoice.py` at the repository root wraps both text-to-speech models behind a single command. `--model` defaults to `auto`, which selects the long-form 1.5B model on a CUDA machine that has the community fork installed and the streaming 0.5B model everywhere else — so the same command line suits a desktop GPU and a CPU laptop.
+
+```bash
+python vibevoice.py --file speech.txt --voice Carter     # auto-selects the model
+python vibevoice.py --cpu --num-threads 4 --file speech.txt
+python vibevoice.py --model 1.5b --file dialogue.txt --voice alice frank
+python vibevoice.py --list-voices
+python vibevoice.py --selftest
+```
+
+Scripts are plain text; `Speaker 1:` / `Speaker 2:` prefixes split turns for the multi-speaker 1.5B model, and prose without prefixes becomes a single speaker. Voice names resolve exactly, then case-insensitively, then by unique substring, and an unmatched name is an error rather than a silent fallback to some other voice.
+
+Selecting `--model 1.5b` or `7b` requires the inference code Microsoft removed from this repository in September 2025; `vibevoice.py` reports how to install the community fork that retains it. `--model 0.5b` runs from this repository with no extra setup.
+
 
 <div align="center" id="generated-example-audio-vibevoice-realtime">
 
