@@ -21,7 +21,9 @@ pip install -e .[streamingtts]   # pins transformers==4.51.3, required for the 0
 |---|---|---|---|---|
 | **Streaming TTS 0.5B** | `configuration_vibevoice_streaming.py` | `modeling_vibevoice_streaming.py` + `modeling_vibevoice_streaming_inference.py` | `vibevoice_streaming_processor.py` | `demo/realtime_model_inference_from_file.py`, `demo/vibevoice_realtime_demo.py` → `demo/web/app.py` |
 | **ASR 7B** | `configuration_vibevoice.py` (`VibeVoiceASRConfig`) | `modeling_vibevoice_asr.py` | `vibevoice_asr_processor.py` | `demo/vibevoice_asr_inference_from_file.py`, `demo/vibevoice_asr_gradio_demo.py`, `vllm_plugin/` |
-| **Long-form TTS 1.5B** | `configuration_vibevoice.py` (`VibeVoiceConfig`) | `modeling_vibevoice.py` | `vibevoice_processor.py` | **none — removed upstream** |
+| **Long-form TTS 1.5B** | `configuration_vibevoice.py` (`VibeVoiceConfig`) | `modeling_vibevoice.py` | `vibevoice_processor.py` | **none in-repo — needs the community fork** |
+
+`vibevoice.py` at the repository root sits above both TTS stacks: `--model auto` picks 1.5B on a CUDA box where `vibevoice.modular.modeling_vibevoice_inference` imports, and the streaming 0.5B model otherwise. It imports torch lazily, so `--selftest` and `--list-voices` work without it.
 
 ### The 1.5B TTS path is deliberately incomplete
 
@@ -33,7 +35,7 @@ Upstream removed the VibeVoice-TTS inference code in 2025-09 ("used in ways inco
 - Neither the 1.5B model nor processor is exported from `vibevoice/__init__.py` — only the streaming stack is.
 - This history is **not recoverable from git**: the fork carries only 54 commits, all post-removal.
 
-Any task touching 1.5B TTS inference means writing or porting a generation loop, not wiring up existing code. Do not assume the missing pieces are somewhere in the tree.
+Any task touching 1.5B TTS inference means writing or porting a generation loop, not wiring up existing code. Do not assume the missing pieces are somewhere in the tree. The MIT-licensed community fork at `https://github.com/vibevoice-community/VibeVoice` retains the removed `modeling_vibevoice_inference.py`; weights stayed on HuggingFace under `vibevoice/VibeVoice-1.5B` and `vibevoice/VibeVoice-7B`.
 
 ## Voice presets are prefilled caches, not audio
 
@@ -63,6 +65,11 @@ After loading any TTS model: `model.eval()` then `model.set_ddpm_inference_steps
 ## Running things
 
 ```bash
+# Unified CLI (model auto-selected by hardware); --selftest is the only test in the repo
+python vibevoice.py --file speech.txt --voice Carter
+python vibevoice.py --cpu --num-threads 4 --file speech.txt
+python vibevoice.py --selftest
+
 # Streaming TTS from a text file
 python demo/realtime_model_inference_from_file.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
