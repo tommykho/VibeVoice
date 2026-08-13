@@ -64,6 +64,12 @@ class StreamingTTSService:
         if device == "mps" and not torch.backends.mps.is_available():
             print("Warning: MPS not available. Falling back to CPU.")
             device = "cpu"
+        if device == "cuda" and not torch.cuda.is_available():
+            print("Warning: CUDA not available. Falling back to CPU.")
+            device = "cpu"
+        num_threads = os.environ.get("MODEL_NUM_THREADS")
+        if device == "cpu" and num_threads:
+            torch.set_num_threads(int(num_threads))
         self.device = device
         self._torch_device = torch.device(device)
 

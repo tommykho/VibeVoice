@@ -118,6 +118,18 @@ def parse_args():
         help="Device for inference: cuda | mps | cpu",
     )
     parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Force CPU inference, overriding --device and auto-detection",
+    )
+    parser.add_argument(
+        "--num_threads",
+        type=int,
+        default=None,
+        help="CPU threads (default: torch's own choice). On hybrid P/E-core laptops, "
+             "matching the P-core count is often faster than using every core.",
+    )
+    parser.add_argument(
         "--cfg_scale",
         type=float,
         default=1.5,
@@ -129,6 +141,9 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if args.cpu:
+        args.device = "cpu"
+
     # Normalize potential 'mpx' typo to 'mps'
     if args.device.lower() == "mpx":
         print("Note: device 'mpx' detected, treating it as 'mps'.")
@@ -138,6 +153,13 @@ def main():
     if args.device == "mps" and not torch.backends.mps.is_available():
         print("Warning: MPS not available. Falling back to CPU.")
         args.device = "cpu"
+
+    if args.device == "cuda" and not torch.cuda.is_available():
+        print("Warning: CUDA not available. Falling back to CPU.")
+        args.device = "cpu"
+
+    if args.device == "cpu" and args.num_threads:
+        torch.set_num_threads(args.num_threads)
 
     print(f"Using device: {args.device}")
 
@@ -298,6 +320,7 @@ def main():
     print(f"Input file: {args.txt_path}")
     print(f"Output file: {output_path}")
     print(f"Speaker names: {args.speaker_name}")
+    print(f"Device: {args.device}" + (f" ({torch.get_num_threads()} threads)" if args.device == "cpu" else ""))
     print(f"Prefilling text tokens: {input_tokens}")
     print(f"Generated speech tokens: {generated_tokens}")
     print(f"Total tokens: {output_tokens}")

@@ -180,6 +180,39 @@ VibeVoice-Realtime is a **lightweight real‑time** text-to-speech model support
 
 [📖 Documentation](docs/vibevoice-realtime-0.5b.md) | [🤗 Hugging Face](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [🚀 Colab](https://colab.research.google.com/github/microsoft/VibeVoice/blob/main/demo/vibevoice_realtime_colab.ipynb)
 
+#### Built-in voices
+
+25 voice presets ship in `demo/voices/streaming_model/` as precomputed prefill states (`.pt`), not audio. Pass any of them to `--speaker_name`; matching is case-insensitive and accepts a unique substring, so `--speaker_name Carter` resolves `en-Carter_man`.
+
+| Language | Presets |
+|---|---|
+| English | `en-Carter_man`, `en-Davis_man`, `en-Frank_man`, `en-Mike_man`, `en-Emma_woman`, `en-Grace_woman` |
+| English (Indian) | `in-Samuel_man` |
+| German | `de-Spk0_man`, `de-Spk1_woman` |
+| French | `fr-Spk0_man`, `fr-Spk1_woman` |
+| Italian | `it-Spk1_man`, `it-Spk0_woman` |
+| Japanese | `jp-Spk0_man`, `jp-Spk1_woman` |
+| Korean | `kr-Spk1_man`, `kr-Spk0_woman` |
+| Dutch | `nl-Spk0_man`, `nl-Spk1_woman` |
+| Polish | `pl-Spk0_man`, `pl-Spk1_woman` |
+| Portuguese | `pt-Spk1_man`, `pt-Spk0_woman` |
+| Spanish | `sp-Spk1_man`, `sp-Spk0_woman` |
+
+`bash demo/download_experimental_voices.sh` adds a further set of experimental speakers (11 English styles plus more voices in the nine non-English languages) under `demo/voices/streaming_model/experimental_voices/`; they are picked up automatically. Non-English voices are exploratory — the model is trained for English.
+
+Custom voices cannot be created from this repository: the presets are embedded prefill states and the encoder that produces them was not released, a deliberate deepfake mitigation.
+
+#### CPU inference
+
+Pass `--cpu` to run without a GPU (float32 + sdpa). `--num_threads` caps the thread count, which is usually worth tuning on hybrid P/E-core laptops:
+
+```bash
+python demo/realtime_model_inference_from_file.py --cpu --num_threads 4 \
+  --txt_path demo/text_examples/1p_vibevoice.txt --speaker_name Carter
+```
+
+The model needs roughly 2 GB of weights plus activations at float32, so 8 GB of RAM is comfortable. Expect generation to be slower than real time on laptop-class CPUs; the run prints RTF so you can measure your own. Lowering the DDPM step count is the main speed dial.
+
 
 <div align="center" id="generated-example-audio-vibevoice-realtime">
 
