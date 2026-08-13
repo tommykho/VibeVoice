@@ -123,6 +123,11 @@ def parse_args():
         help="Force CPU inference, overriding --device and auto-detection",
     )
     parser.add_argument(
+        "--list_voices",
+        action="store_true",
+        help="List the available voice presets and exit",
+    )
+    parser.add_argument(
         "--num_threads",
         type=int,
         default=None,
@@ -140,6 +145,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if args.list_voices:
+        VoiceMapper()
+        return
 
     if args.cpu:
         args.device = "cpu"
