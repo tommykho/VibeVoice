@@ -48,6 +48,52 @@
 
 </div>
 
+## Installation
+
+Python 3.10 or later, plus `ffmpeg` on PATH. The streaming 0.5B model pins `transformers==4.51.3`.
+
+```bash
+git clone https://github.com/microsoft/VibeVoice.git
+cd VibeVoice
+pip install -r requirements.txt   # dependencies only
+pip install -e .                  # puts the vibevoice package on the path
+```
+
+`pip install -e .[streamingtts]` installs both in one step; `requirements.txt` exists for the common case of installing dependencies without the editable package.
+
+### Choosing a torch build
+
+A bare `torch` does not mean the same thing everywhere: on Linux pip installs a CUDA build that carries several GB of NVIDIA libraries, on Windows a CPU-only one. Install torch explicitly *before* the rest, and the dependency is already satisfied when `requirements.txt` is processed.
+
+```bash
+# NVIDIA GPU — pick the index matching your driver; cu128 covers Blackwell
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# CPU only — avoids downloading CUDA libraries that will never be used
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+`flash_attention_2` is optional; every entry point falls back to `sdpa` when it is unavailable.
+
+### Windows
+
+Use Python 3.11: `transformers==4.51.3` has no wheels for 3.12+ on Windows. `git` and `ffmpeg` must be on PATH. Set `HF_HUB_DISABLE_SYMLINKS=1` before downloading weights, or the HuggingFace cache fails with `WinError 1314` unless Developer Mode is enabled.
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+$env:HF_HUB_DISABLE_SYMLINKS = '1'
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128   # NVIDIA only
+pip install -r requirements.txt
+pip install -e .
+```
+
+Keep the venv on a local disk rather than a network share — torch is several GB of DLLs read on every import.
+
+### CPU only
+
+Install the CPU torch build above, then `pip install -r requirements.txt`. Use the 0.5B streaming model and see [CPU inference](#cpu-inference).
+
 ## Overview
 
 VibeVoice is a **family of open-source frontier voice AI models** that includes both Text-to-Speech (TTS) and Automatic Speech Recognition (ASR) models. 

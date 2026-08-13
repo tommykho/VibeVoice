@@ -1,0 +1,44 @@
+# Runtime dependencies for VibeVoice.
+#
+#   pip install -r requirements.txt
+#
+# This mirrors the dependencies in pyproject.toml, with transformers pinned to
+# the version the streaming 0.5B model needs. `pip install -e .[streamingtts]`
+# installs the same set and additionally puts the vibevoice package on the path,
+# which the demo scripts and vibevoice.py import -- so run that too, or set
+# PYTHONPATH to the repository root.
+#
+# What a bare `torch` resolves to depends on the platform: on Linux it is a
+# CUDA build that bundles several GB of NVIDIA libraries, on Windows a CPU-only
+# build. Install torch explicitly FIRST if you want the other one -- the rest of
+# this file then finds the dependency satisfied and leaves it alone.
+#
+#   CPU only:  pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   NVIDIA:    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+#
+# ffmpeg must be on PATH for audio/video handling; it is not a pip package.
+
+torch
+
+# 4.51.3 exactly: the streaming 0.5B model does not load on later releases.
+transformers==4.51.3
+
+accelerate
+diffusers
+llvmlite>=0.40.0
+numba>=0.57.0
+numpy
+scipy
+librosa
+ml-collections
+absl-py
+tqdm
+requests
+pydub
+
+# ASR gradio demo and the streaming websocket demo.
+gradio
+av
+aiortc
+fastapi
+uvicorn[standard]
