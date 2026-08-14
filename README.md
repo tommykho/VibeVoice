@@ -99,7 +99,18 @@ uv venv --python 3.11 --seed .venv
 
 `--seed` matters: a plain `uv venv` creates the environment without pip, and `python -m pip` inside it then reports `No module named pip`. Either pass `--seed`, or install with `uv pip install ...` instead of `pip install ...` — with the venv activated, `uv pip` targets it through `VIRTUAL_ENV`. An existing pip-less venv can be repaired with `python -m ensurepip --upgrade`.
 
-Keeping the venv on a local disk while the repository sits on a network drive is fine and preferable; only the activated interpreter matters. Activation then proceeds as above. A missing `Activate.ps1` means the venv was never created — a script that exists but is blocked by execution policy reports that specifically instead.
+Keeping the venv on a local disk while the repository sits on a network drive is fine and preferable; only the activated interpreter matters. Activation then proceeds as above.
+
+Two helpers in the repository root cover the common cases:
+
+```powershell
+.\activate.ps1                              # activate the venv in this session
+.\vv --file speech.txt --voice Carter       # run vibevoice.py, no activation
+```
+
+`activate.ps1` searches `.venv`, then `%LOCALAPPDATA%\VibeVoice\venv` and `%USERPROFILE%\.venv`; a venv elsewhere can be recorded once with `"C:\path\to\venv" | Set-Content .venvpath`. `vv.cmd` reads the same file.
+
+Activation has to be a PowerShell script rather than a `.cmd`: a batch file runs in a child `cmd.exe`, so any environment it sets is discarded when it exits. A `.cmd` is fine for *running* something with a chosen interpreter, which is what `vv.cmd` does. A missing `Activate.ps1` means the venv was never created — a script that exists but is blocked by execution policy reports that specifically instead.
 
 Inside the venv, prefer `python -m pip install ...` over a bare `pip`: the former always targets the interpreter just invoked, while the latter resolves through PATH and can install into a different Python entirely. Confirm which one is active with `python -c "import sys; print(sys.executable)"` — it should print a path inside `.venv`.
 

@@ -182,3 +182,4 @@ experimental_voices
 /voices/
 /vendor/
 vibevoice/modular/modeling_vibevoice_inference.py
+.venvpath
