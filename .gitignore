@@ -176,3 +176,9 @@ tags
 exp
 .gradio/
 experimental_voices
+
+# Local wav voice prompts for the 1.5B model, and a clone of the community
+# fork. Both are per-machine setup: keep recorded voices out of the history.
+/voices/
+/vendor/
+vibevoice/modular/modeling_vibevoice_inference.py
