@@ -29,12 +29,22 @@ FILES=(
   "experimental_voices_en2.tar.gz|https://github.com/user-attachments/files/24189273/experimental_voices_en2.tar.gz"
 )
 
+# Git Bash and macOS ship curl but not wget, so accept either.
+if command -v wget > /dev/null 2>&1; then
+  download() { wget -O "$1" "$2"; }
+elif command -v curl > /dev/null 2>&1; then
+  download() { curl -fSL -o "$1" "$2"; }
+else
+  echo "[ERROR] neither wget nor curl found on PATH" >&2
+  exit 1
+fi
+
 # Download, extract, and clean up each archive
 for entry in "${FILES[@]}"; do
   IFS="|" read -r FNAME URL <<< "$entry"
 
   echo "[INFO] Downloading $FNAME ..."
-  wget -O "$FNAME" "$URL"
+  download "$FNAME" "$URL"
 
   echo "[INFO] Extracting $FNAME ..."
   tar -xzvf "$FNAME" -C "$TARGET_DIR"

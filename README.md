@@ -244,7 +244,20 @@ VibeVoice-Realtime is a **lightweight real‑time** text-to-speech model support
 | Portuguese | `pt-Spk1_man`, `pt-Spk0_woman` |
 | Spanish | `sp-Spk1_man`, `sp-Spk0_woman` |
 
-`bash demo/download_experimental_voices.sh` adds a further set of experimental speakers (11 English styles plus more voices in the nine non-English languages) under `demo/voices/streaming_model/experimental_voices/`; they are picked up automatically. Non-English voices are exploratory — the model is trained for English.
+#### Installing the experimental voices
+
+A further set of experimental speakers is distributed separately — 11 English styles plus additional voices in German, French, Japanese, Korean, Polish, Portuguese and Spanish:
+
+```bash
+bash demo/download_experimental_voices.sh
+python vibevoice.py --list-voices          # confirm the new names appear
+```
+
+The script fetches nine archives and unpacks them into `demo/voices/streaming_model/experimental_voices/`. Both the demo scripts and `vibevoice.py` scan that directory recursively, so the new voices need no further configuration and are used exactly like the built-in ones.
+
+On Windows, run it from Git Bash (installed with Git for Windows); the script uses `wget` or `curl`, whichever is present. Re-running is safe — each archive is deleted after extraction.
+
+Non-English voices are exploratory: the model is trained for English, and other languages may produce unpredictable results.
 
 Custom voices cannot be created from this repository: the presets are embedded prefill states and the encoder that produces them was not released, a deliberate deepfake mitigation.
 
