@@ -9,7 +9,7 @@ rem cmd.exe, so any environment it sets is gone when it exits. To activate the
 rem venv in your own shell, use  .\activate.ps1  instead.
 setlocal
 set "VENV=%~dp0.venv"
-if exist "%~dp0.venvpath" set /p VENV=<"%~dp0.venvpath"
+if exist "%~dp0.venvpath" for /f "usebackq delims=" %%p in ("%~dp0.venvpath") do set "VENV=%%p"
 if exist "%VENV%\Scripts\python.exe" (
   "%VENV%\Scripts\python.exe" "%~dp0vibevoice.py" %*
 ) else (
