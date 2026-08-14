@@ -82,13 +82,22 @@ Carry the `<2.10` pin on that command as well. Without it pip installs the newes
 Use Python 3.11: `transformers==4.51.3` has no wheels for 3.12+ on Windows. `git` and `ffmpeg` must be on PATH. Set `HF_HUB_DISABLE_SYMLINKS=1` before downloading weights, or the HuggingFace cache fails with `WinError 1314` unless Developer Mode is enabled.
 
 ```powershell
-py -3.11 -m venv .venv
+py -3.11 -m venv .venv          # see below if this reports no such version
 .\.venv\Scripts\Activate.ps1
 $env:HF_HUB_DISABLE_SYMLINKS = '1'
 pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cu128   # NVIDIA only
 pip install -r requirements.txt
 pip install -e .
 ```
+
+`py -0p` lists the interpreters the launcher can see. If 3.11 is not among them, [uv](https://docs.astral.sh/uv/) fetches a standalone one without disturbing the system Python:
+
+```powershell
+winget install --id astral-sh.uv --exact     # once, then reopen the terminal
+uv venv --python 3.11 .venv
+```
+
+Activation then proceeds as above. A missing `Activate.ps1` means the venv was never created — a script that exists but is blocked by execution policy reports that specifically instead.
 
 Keep the venv on a local disk rather than a network share — torch is several GB of DLLs read on every import.
 
