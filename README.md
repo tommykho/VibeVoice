@@ -285,7 +285,18 @@ python demo/realtime_model_inference_from_file.py --cpu --num_threads 4 \
   --txt_path demo/text_examples/1p_vibevoice.txt --speaker_name Carter
 ```
 
-The model needs roughly 2 GB of weights plus activations at float32, so 8 GB of RAM is comfortable. Expect generation to be slower than real time on laptop-class CPUs; the run prints RTF so you can measure your own. Lowering the DDPM step count is the main speed dial.
+The model needs roughly 2 GB of weights plus activations at float32, so 8 GB of RAM is comfortable. Every run prints RTF (Real Time Factor: elapsed time divided by audio duration, so below 1.0 is faster than real time), which makes it easy to measure your own hardware.
+
+Measured on the 0.5B streaming model, `demo/text_examples/1p_vibevoice.txt`, 5 DDPM steps, both using sdpa:
+
+| Hardware | dtype | RTF | Throughput |
+|---|---|---|---|
+| RTX 5080 | bfloat16 | 0.34x | 64.1s of audio in 22s |
+| Ryzen 9 9900X, 12 threads | float32 | 1.42x | 53.6s of audio in 76s |
+
+A desktop CPU therefore lands near real time, roughly 4x slower than the GPU. Low-power laptop CPUs are considerably slower again. Lowering `--ddpm-steps` is the main speed dial, and on hybrid P/E-core laptops `--num-threads` is worth tuning — matching the P-core count often beats using every core.
+
+`flash_attention_2` has no practical Windows build, so the GPU figure above is an sdpa result; the loader falls back automatically and prints a notice when it does.
 
 ## `vibevoice.py` — one CLI for both TTS stacks
 
