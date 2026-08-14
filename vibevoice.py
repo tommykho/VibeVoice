@@ -119,22 +119,37 @@ def load_options(device: str):
 
 # -- voices -----------------------------------------------------------
 
-def voice_files(model_key: str) -> dict[str, Path]:
+def voices_dir_for(model_key: str, override: Path | None) -> Path:
+    """Where voices live for a stack.
+
+    The 1.5B wav prompts are not in this repository -- they went with the
+    inference code -- so look in voices/ first, which is where the community
+    fork's presets and vibeRecord.py recordings usually end up.
+    """
+    if override is not None:
+        return override
     if model_key == "0.5b":
-        return {p.stem: p for p in sorted(STREAMING_VOICES.rglob("*.pt"))}
-    return {p.stem: p for p in sorted(LONGFORM_VOICES.glob("*.wav"))}
+        return STREAMING_VOICES
+    local = ROOT / "voices"
+    return local if any(local.glob("*.wav")) else LONGFORM_VOICES
 
 
-def resolve_voice(name: str, model_key: str) -> Path:
+def voice_files(model_key: str, override: Path | None = None) -> dict[str, Path]:
+    directory = voices_dir_for(model_key, override)
+    if model_key == "0.5b":
+        return {p.stem: p for p in sorted(directory.rglob("*.pt"))}
+    return {p.stem: p for p in sorted(directory.glob("*.wav"))}
+
+
+def resolve_voice(name: str, model_key: str, override: Path | None = None) -> Path:
     """Exact, then case-insensitive, then unique substring. Never guesses.
 
     This repository's own VoiceMapper falls back to an arbitrary voice when
     nothing matches, which yields a finished file in the wrong voice.
     """
-    files = voice_files(model_key)
+    files = voice_files(model_key, override)
     if not files:
-        where = STREAMING_VOICES if model_key == "0.5b" else LONGFORM_VOICES
-        die(f"no voices in {where}")
+        die(f"no voices in {voices_dir_for(model_key, override)}")
     if name in files:
         return files[name]
     low = name.lower()
@@ -193,7 +208,7 @@ def run_streaming(args, device: str):
         VibeVoiceStreamingProcessor,
     )
 
-    voice = resolve_voice(args.voice[0], "0.5b")
+    voice = resolve_voice(args.voice[0], "0.5b", args.voices_dir)
     script = " ".join(text for _, text in parse_script(args.file.read_text(encoding="utf-8")))
     if not script:
         die(f"{args.file} is empty")
@@ -271,7 +286,7 @@ def run_longform(args, device: str):
     if nums[-1] > len(args.voice):
         die(f"script uses Speaker {nums[-1]} but only {len(args.voice)} voice(s) given")
     remap = {n: i + 1 for i, n in enumerate(nums)}
-    paths = [resolve_voice(args.voice[n - 1], args.model) for n in nums]
+    paths = [resolve_voice(args.voice[n - 1], args.model, args.voices_dir) for n in nums]
     script = "\n".join(f"Speaker {remap[n]}: {t}" for n, t in segments)
 
     dtype, attn, device_map = load_options(device)
@@ -364,6 +379,9 @@ def main():
                    help=f"auto | {' | '.join(MODELS)} or a HuggingFace id. "
                         "auto picks 1.5b on a CUDA box with the community fork "
                         "installed, else 0.5b (default: auto)")
+    p.add_argument("--voices-dir", type=Path, default=None,
+                   help="directory of voice files; defaults to "
+                        "demo/voices/streaming_model for 0.5b and voices/ for 1.5b")
     p.add_argument("--device", default="auto", help="auto | cuda | mps | cpu")
     p.add_argument("--cpu", action="store_true",
                    help="force CPU inference, overriding --device and auto-detection")
@@ -385,7 +403,7 @@ def main():
         selftest()
         return
     if args.list_voices:
-        files = voice_files(args.model if args.model in MODELS else "0.5b")
+        files = voice_files(args.model if args.model in MODELS else "0.5b", args.voices_dir)
         if not files:
             print("no voices found")
         for name in files:
