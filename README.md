@@ -99,6 +99,8 @@ uv venv --python 3.11 .venv
 
 Activation then proceeds as above. A missing `Activate.ps1` means the venv was never created — a script that exists but is blocked by execution policy reports that specifically instead.
 
+Inside the venv, prefer `python -m pip install ...` over a bare `pip`: the former always targets the interpreter just invoked, while the latter resolves through PATH and can install into a different Python entirely. Confirm which one is active with `python -c "import sys; print(sys.executable)"` — it should print a path inside `.venv`.
+
 Keep the venv on a local disk rather than a network share — torch is several GB of DLLs read on every import.
 
 ### CPU only
