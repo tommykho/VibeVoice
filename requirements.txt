@@ -1,12 +1,14 @@
-# Runtime dependencies for VibeVoice.
+# Runtime dependencies for the VibeVoice CLI and the streaming 0.5B model.
 #
 #   pip install -r requirements.txt
 #
-# This mirrors the dependencies in pyproject.toml, with transformers pinned to
-# the version the streaming 0.5B model needs. `pip install -e .[streamingtts]`
-# installs the same set and additionally puts the vibevoice package on the path,
-# which the demo scripts and vibevoice.py import -- so run that too, or set
-# PYTHONPATH to the repository root.
+# This is the minimum vibevoice.py, batch_samples.py and
+# demo/realtime_model_inference_from_file.py actually import. The gradio /
+# websocket / ASR demos need more: pip install -r requirements-demos.txt
+#
+# `pip install -e .[streamingtts]` installs the same set and additionally puts
+# the vibevoice package on the path, which every entry point needs -- run that
+# too, or set PYTHONPATH to the repository root.
 #
 # What a bare `torch` resolves to depends on the platform: on Linux it is a
 # CUDA build that bundles several GB of NVIDIA libraries, on Windows a CPU-only
@@ -18,27 +20,16 @@
 #
 # ffmpeg must be on PATH for audio/video handling; it is not a pip package.
 
-torch
+# torch 2.10 tightened its weights-only unpickler to an exact type check, which
+# rejects the BaseModelOutputWithPast inside every demo/voices/**/*.pt preset:
+# "Can only SETITEMS for dict, collections.OrderedDict, collections.Counter".
+torch<2.10
 
 # 4.51.3 exactly: the streaming 0.5B model does not load on later releases.
 transformers==4.51.3
 
-accelerate
-diffusers
-llvmlite>=0.40.0
-numba>=0.57.0
+accelerate      # transformers needs it for device_map= loading
+diffusers       # vibevoice/schedule/dpm_solver.py
+librosa         # audio processors; pulls soundfile, scipy, numba, llvmlite
 numpy
-scipy
-librosa
-ml-collections
-absl-py
 tqdm
-requests
-pydub
-
-# ASR gradio demo and the streaming websocket demo.
-gradio
-av
-aiortc
-fastapi
-uvicorn[standard]

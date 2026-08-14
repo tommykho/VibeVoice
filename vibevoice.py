@@ -24,6 +24,7 @@ import io
 import re
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -39,8 +40,18 @@ MODELS = {
 FORK_URL = "https://github.com/vibevoice-community/VibeVoice"
 
 
+def stamp() -> str:
+    """2026-08-13 9:08:11PM -- no leading zero on the hour."""
+    now = datetime.now()
+    return now.strftime("%Y-%m-%d ") + now.strftime("%I:%M:%S%p").lstrip("0")
+
+
+def log(msg: str):
+    print(f"{stamp()} - {msg}")
+
+
 def die(msg: str):
-    print(f"error: {msg}", file=sys.stderr)
+    print(f"{stamp()} - error: {msg}", file=sys.stderr)
     raise SystemExit(1)
 
 
@@ -87,10 +98,10 @@ def resolve_device(requested: str | None, force_cpu: bool) -> str:
         return "mps" if torch.backends.mps.is_available() else "cpu"
     device = "mps" if requested == "mpx" else requested
     if device == "cuda" and not torch.cuda.is_available():
-        print("Warning: CUDA not available. Falling back to CPU.")
+        log("Warning: CUDA not available. Falling back to CPU.")
         return "cpu"
     if device == "mps" and not torch.backends.mps.is_available():
-        print("Warning: MPS not available. Falling back to CPU.")
+        log("Warning: MPS not available. Falling back to CPU.")
         return "cpu"
     return device
 
@@ -188,7 +199,7 @@ def run_streaming(args, device: str):
         die(f"{args.file} is empty")
 
     dtype, attn, device_map = load_options(device)
-    print(f"Loading {args.model_id} on {device} ({dtype}, {attn})")
+    log(f"Loading {args.model_id} on {device} ({dtype}, {attn})")
     processor = VibeVoiceStreamingProcessor.from_pretrained(args.model_id)
     try:
         model = VibeVoiceStreamingForConditionalGenerationInference.from_pretrained(
@@ -197,7 +208,7 @@ def run_streaming(args, device: str):
     except Exception:
         if attn != "flash_attention_2":
             raise
-        print("flash_attention_2 unavailable, retrying with sdpa (may lower audio quality).")
+        log("flash_attention_2 unavailable, retrying with sdpa (may lower audio quality).")
         model = VibeVoiceStreamingForConditionalGenerationInference.from_pretrained(
             args.model_id, torch_dtype=dtype, device_map=device_map, attn_implementation="sdpa",
         )
@@ -206,7 +217,7 @@ def run_streaming(args, device: str):
     model.eval()
     model.set_ddpm_inference_steps(num_steps=args.ddpm_steps)
 
-    print(f"Voice: {voice.stem}")
+    log(f"Voice: {voice.stem}")
     with torch.serialization.safe_globals([BaseModelOutputWithPast, DynamicCache]):
         prefilled = torch.load(voice, map_location=device, weights_only=True)
 
@@ -264,7 +275,7 @@ def run_longform(args, device: str):
     script = "\n".join(f"Speaker {remap[n]}: {t}" for n, t in segments)
 
     dtype, attn, device_map = load_options(device)
-    print(f"Loading {args.model_id} on {device} ({dtype}, {attn})")
+    log(f"Loading {args.model_id} on {device} ({dtype}, {attn})")
     processor = VibeVoiceProcessor.from_pretrained(args.model_id)
     model = VibeVoiceForConditionalGenerationInference.from_pretrained(
         args.model_id, torch_dtype=dtype, device_map=device_map, attn_implementation=attn,
@@ -274,7 +285,7 @@ def run_longform(args, device: str):
     model.eval()
     model.set_ddpm_inference_steps(num_steps=args.ddpm_steps)
 
-    print(f"Voices: {', '.join(p.stem for p in paths)}")
+    log(f"Voices: {', '.join(p.stem for p in paths)}")
     inputs = processor(
         text=[script], voice_samples=[[str(p) for p in paths]], padding=True,
         return_tensors="pt", return_attention_mask=True,
@@ -302,9 +313,9 @@ def report(args, device: str, elapsed: float, seconds: float):
     import torch
 
     threads = f", {torch.get_num_threads()} threads" if device == "cpu" else ""
-    print(f"Saved {args.output}")
-    print(f"  {seconds:.1f}s of audio in {elapsed:.0f}s  "
-          f"(RTF {elapsed / seconds:.2f}x on {device}{threads}, {args.ddpm_steps} ddpm steps)")
+    log(f"Saved {args.output}")
+    log(f"  {seconds:.1f}s of audio in {elapsed:.0f}s  "
+        f"(RTF {elapsed / seconds:.2f}x on {device}{threads}, {args.ddpm_steps} ddpm steps)")
 
 
 # -- selftest ---------------------------------------------------------
@@ -365,6 +376,9 @@ def main():
     p.add_argument("--seed", type=int)
     p.add_argument("--list-voices", action="store_true")
     p.add_argument("--selftest", action="store_true")
+    p.add_argument("--verbose", action="store_true",
+                   help="keep transformers' checkpoint and tokenizer warnings, which are "
+                        "expected here: the unused encoder weights are never loaded")
     args = p.parse_args()
 
     if args.selftest:
@@ -385,6 +399,9 @@ def main():
         args.output = OUTPUTS / (args.file.stem + ".wav")
 
     require_torch()
+    if not args.verbose:
+        from transformers.utils import logging as hf_logging
+        hf_logging.set_verbosity_error()
     args.model = resolve_model(args.model)
     args.model_id = MODELS.get(args.model, args.model)
     if args.voice is None:

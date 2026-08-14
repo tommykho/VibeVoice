@@ -1,0 +1,19 @@
+# Extra dependencies for the demo servers, on top of requirements.txt.
+#
+#   pip install -r requirements.txt -r requirements-demos.txt
+#
+# Needed by:
+#   demo/vibevoice_realtime_demo.py + demo/web/app.py   fastapi, uvicorn, aiortc, av
+#   demo/vibevoice_asr_gradio_demo.py                   gradio, pydub, av
+#
+# Nothing here is imported by vibevoice.py, batch_samples.py or
+# demo/realtime_model_inference_from_file.py.
+
+-r requirements.txt
+
+gradio
+av
+aiortc
+fastapi
+uvicorn[standard]
+pydub
