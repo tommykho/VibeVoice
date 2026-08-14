@@ -67,11 +67,13 @@ A bare `torch` does not mean the same thing everywhere: on Linux pip installs a 
 
 ```bash
 # NVIDIA GPU — pick the index matching your driver; cu128 covers Blackwell
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cu128
 
 # CPU only — avoids downloading CUDA libraries that will never be used
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cpu
 ```
+
+Carry the `<2.10` pin on that command as well. Without it pip installs the newest torch, `requirements.txt` then downgrades it, and any companion package resolved against the newer version is left stranded — `torchvision` pins torch exactly and reports the mismatch as a dependency conflict. Neither `torchvision` nor `torchaudio` is used by this repository, so neither should be installed; if one is already present and conflicting, `pip uninstall torchvision` resolves it.
 
 `flash_attention_2` is optional; every entry point falls back to `sdpa` when it is unavailable.
 
@@ -83,7 +85,7 @@ Use Python 3.11: `transformers==4.51.3` has no wheels for 3.12+ on Windows. `git
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 $env:HF_HUB_DISABLE_SYMLINKS = '1'
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128   # NVIDIA only
+pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cu128   # NVIDIA only
 pip install -r requirements.txt
 pip install -e .
 ```

@@ -15,8 +15,13 @@
 # build. Install torch explicitly FIRST if you want the other one -- the rest of
 # this file then finds the dependency satisfied and leaves it alone.
 #
-#   CPU only:  pip install torch --index-url https://download.pytorch.org/whl/cpu
-#   NVIDIA:    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+#   CPU only:  pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cpu
+#   NVIDIA:    pip install "torch<2.10" --index-url https://download.pytorch.org/whl/cu128
+#
+# Carry the <2.10 pin on that command too. Without it pip takes the newest
+# torch, and the downgrade this file then applies strands any companion package
+# already installed against the newer one (torchvision pins torch exactly).
+# Neither torchvision nor torchaudio is used here -- do not install them.
 #
 # ffmpeg must be on PATH for audio/video handling; it is not a pip package.
 
