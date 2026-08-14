@@ -58,10 +58,13 @@ def die(msg: str):
 # -- device -----------------------------------------------------------
 
 def resolve_model(requested: str) -> str:
-    """auto -> 1.5b on a CUDA box with the fork installed, else 0.5b.
+    """auto -> 1.5b when CUDA and the long-form inference module are both
+    present, else 0.5b.
 
     Matches the usual split: the long-form model on a desktop GPU, the
     streaming model on a laptop without CUDA, from one unchanged command.
+    The module is only importable once it has been copied into
+    vibevoice/modular/, since the local package shadows any installed fork.
     """
     if requested != "auto":
         return requested
@@ -271,8 +274,13 @@ def run_longform(args, device: str):
     except ImportError:
         die(
             f"the {args.model} model needs inference code that Microsoft removed from this\n"
-            f"repository in 2025-09. Install the community fork, which retains it:\n"
-            f"    pip install -e git+{FORK_URL}.git#egg=vibevoice\n"
+            f"repository in 2025-09. Installing the community fork as a package is not\n"
+            f"enough -- this repository's own vibevoice/ package sits next to this script\n"
+            f"and shadows it on import. Copy the one missing module in instead:\n"
+            f"    git clone --depth 1 {FORK_URL}.git ../vibevoice-fork\n"
+            f"    cp ../vibevoice-fork/vibevoice/modular/modeling_vibevoice_inference.py "
+            f"vibevoice/modular/\n"
+            f"Voice prompts for this stack are wavs; point --voices-dir at them.\n"
             f"Or use --model 0.5b, which runs from this repository as-is."
         )
     from vibevoice.processor.vibevoice_processor import VibeVoiceProcessor

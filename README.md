@@ -299,6 +299,8 @@ A desktop CPU lands near real time at roughly 4x the GPU's time; a low-power lap
 
 Lowering `--ddpm-steps` is the main speed dial. On hybrid P/E-core laptops `--num-threads` is also worth tuning — matching the P-core count often beats using every core, since the efficiency cores hold back each synchronised step.
 
+**Comparing RTF across models is misleading.** RTF divides by the audio produced, and the two models do not speak at the same rate. On one RTX 5080, from the same script: the 1.5B model produced 47.5s of audio in 27s (RTF 0.57, 5.4 GB VRAM, 10 DDPM steps), while the 0.5B model produced 60.3s in 21s (RTF 0.35, 5 steps). The wording matched; the 0.5B model simply speaks more slowly, inflating its denominator. Per script, the honest figure is 27s against 21s — the 1.5B model costs about 29% more wall clock, not the 63% the RTF ratio implies. Compare wall clock for a fixed script when choosing between them.
+
 `flash_attention_2` has no practical Windows build, so the GPU figure above is an sdpa result; the loader falls back automatically and prints a notice when it does.
 
 ## `vibevoice.py` — one CLI for both TTS stacks
