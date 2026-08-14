@@ -287,14 +287,17 @@ python demo/realtime_model_inference_from_file.py --cpu --num_threads 4 \
 
 The model needs roughly 2 GB of weights plus activations at float32, so 8 GB of RAM is comfortable. Every run prints RTF (Real Time Factor: elapsed time divided by audio duration, so below 1.0 is faster than real time), which makes it easy to measure your own hardware.
 
-Measured on the 0.5B streaming model, `demo/text_examples/1p_vibevoice.txt`, 5 DDPM steps, both using sdpa:
+Measured on the 0.5B streaming model, `demo/text_examples/1p_vibevoice.txt`, 5 DDPM steps, all using sdpa:
 
-| Hardware | dtype | RTF | Throughput |
+| Hardware | dtype | RTF | One minute of audio takes |
 |---|---|---|---|
-| RTX 5080 | bfloat16 | 0.34x | 64.1s of audio in 22s |
-| Ryzen 9 9900X, 12 threads | float32 | 1.42x | 53.6s of audio in 76s |
+| RTX 5080 | bfloat16 | 0.34x | ~20s |
+| Ryzen 9 9900X, 12 threads | float32 | 1.42x | ~1m25s |
+| Core i5-120U (2P+8E laptop) | float32 | 3.47x | ~3m28s |
 
-A desktop CPU therefore lands near real time, roughly 4x slower than the GPU. Low-power laptop CPUs are considerably slower again. Lowering `--ddpm-steps` is the main speed dial, and on hybrid P/E-core laptops `--num-threads` is worth tuning — matching the P-core count often beats using every core.
+A desktop CPU lands near real time at roughly 4x the GPU's time; a low-power laptop CPU is about 10x the GPU's. All three are usable for offline generation, but only the GPU has headroom for interactive use.
+
+Lowering `--ddpm-steps` is the main speed dial. On hybrid P/E-core laptops `--num-threads` is also worth tuning — matching the P-core count often beats using every core, since the efficiency cores hold back each synchronised step.
 
 `flash_attention_2` has no practical Windows build, so the GPU figure above is an sdpa result; the loader falls back automatically and prints a notice when it does.
 
